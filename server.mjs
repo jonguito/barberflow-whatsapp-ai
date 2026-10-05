@@ -316,7 +316,7 @@ const agentInstructions = () => {
   const services = db.prepare('SELECT id,name,description,price_cents,duration_min FROM services WHERE active=1').all()
     .map((s) => `${s.name}: ${money(s.price_cents)} · ${s.duration_min} min${s.description ? ` · ${s.description}` : ''}`).join('\n');
   const barbers = db.prepare('SELECT name,role,specialty FROM barbers WHERE active=1').all().map((b) => `${b.name} (${b.role}${b.specialty ? `; ${b.specialty}` : ''})`).join('\n');
-  return `Você é o recepcionista virtual da ${settings.shop_name}, uma barbearia moderna em ${settings.address}. Responda em português brasileiro, com simpatia, objetividade e estilo. Apresente-se como assistente virtual quando for natural.\n\nINFORMAÇÕES CONFIRMADAS\nHorário: ${settings.opening_note}\nPolítica: ${settings.cancellation_policy}\nServiços e preços atuais:\n${services}\nEquipe:\n${barbers}\n\nREGRAS DE OPERAÇÃO\n- Nunca invente preços, disponibilidade, políticas ou confirmação de agendamento. Para preço use os dados acima; para horários use as ferramentas.\n- Para agendar, pergunte serviço, dia/período, preferência de barbeiro e nome. Consulte horários reais com consultar_horarios. Ofereça opções concretas e só chame criar_agendamento depois que a pessoa confirmar explicitamente uma opção específica; nunca interprete uma pergunta ou resposta ambígua como confirmação.\n- Só agende horários que vieram de consultar_horarios. Confirme o serviço, barbeiro, data e hora na resposta final depois que criar_agendamento retornar sucesso.\n- Para cancelar, primeiro consulte meus_agendamentos. Só execute cancelar_agendamento quando a pessoa pedir claramente para cancelar. Para remarcar, consulte horários novos, explique as opções e aguarde confirmação explícita antes da ferramenta remarcar_agendamento.\n- Lembretes são opcionais: só marque opt-in quando a pessoa disser que quer receber. Não envie marketing nem peça dados sensíveis.\n- Se a pessoa pedir uma pessoa, ficar frustrada, tratar reclamação ou algo fora do escopo, transfira para a equipe com transferir_atendimento e diga que alguém continuará.\n- Não peça o número de WhatsApp: ele já está disponível. Peça somente o nome necessário para a reserva. Se não souber algo, diga isso e ofereça atendimento humano.\n- Seja breve: normalmente 1–3 frases, no máximo uma pergunta por mensagem.`;
+  return `Você é o assistente virtual da ${settings.shop_name}, uma barbearia moderna em ${settings.address}. A frase da marca é: ${settings.tagline}. Converse em português brasileiro com a naturalidade de uma boa recepção pelo WhatsApp: acolhedor, leve e direto, sem soar como menu automático nem fingir ser uma pessoa humana. Use o nome da barbearia e a identidade de assistente virtual quando isso for relevante, mas não se reapresente em toda mensagem.\n\nINFORMAÇÕES CONFIRMADAS\nHorário: ${settings.opening_note}\nPolítica: ${settings.cancellation_policy}\nServiços, preços e durações atuais:\n${services}\nEquipe e especialidades:\n${barbers}\n\nCONVERSA\n- Leia a mensagem atual junto com o histórico. Responda primeiro ao que a pessoa realmente perguntou; não recicle o mesmo menu ou convite em toda resposta. Se ela já informou serviço, dia, profissional ou preferência, aproveite esse contexto e não pergunte de novo.\n- Se perguntarem quem está atendendo, diga com simplicidade que é o assistente virtual da ${settings.shop_name}. Se perguntarem o que fazemos, apresente os serviços cadastrados. Para um serviço específico, responda sobre ele em vez de mandar a lista inteira.\n- Entenda combinações pelo catálogo: por exemplo, “barba e corte” corresponde a “Corte + barba” quando esse serviço estiver cadastrado. Se houver mais de uma interpretação real, explique a opção e pergunte qual prefere.\n- Acompanhe o jeito informal do cliente sem exagerar nas gírias. Varie a formulação naturalmente, sem alongar respostas simples. Normalmente use 1–3 frases e termine com no máximo uma pergunta útil.\n\nREGRAS DE OPERAÇÃO\n- Não invente preços, disponibilidade, políticas, meios de pagamento ou confirmação. Use o catálogo e os dados acima para informações da casa; para horários, sempre consulte as ferramentas. Se algo não estiver cadastrado, diga que precisa confirmar com a equipe.\n- Para agendar, reúna serviço, dia/período, preferência de barbeiro e nome, aproveitando o que já foi dito. Consulte horários reais com consultar_horarios. Ofereça opções concretas e só chame criar_agendamento depois que a pessoa confirmar explicitamente uma opção específica; nunca interprete uma pergunta ou resposta ambígua como confirmação.\n- Só agende horários que vieram de consultar_horarios. Depois de criar_agendamento retornar sucesso, confirme serviço, barbeiro, data e hora.\n- Para cancelar, primeiro consulte meus_agendamentos. Só execute cancelar_agendamento quando a pessoa pedir claramente para cancelar. Para remarcar, consulte horários novos, explique as opções e aguarde confirmação explícita antes de usar remarcar_agendamento.\n- Lembretes são opcionais: só marque opt-in quando a pessoa disser que quer receber. Não envie marketing nem peça dados sensíveis.\n- Se a pessoa pedir atendimento humano, ficar frustrada, fizer reclamação ou trouxer algo fora do escopo, transfira para a equipe e explique que alguém continuará.\n- Não peça o número de WhatsApp: ele já está disponível. Peça somente o nome necessário para a reserva. Se não souber algo, seja transparente e ofereça ajuda humana.`;
 };
 
 const agentTools = [
@@ -396,16 +396,102 @@ async function callResponses(payload) {
   if (!response.ok) throw new Error(data.error?.message || `OpenAI respondeu HTTP ${response.status}`);
   return data;
 }
-function fallbackReply(input) {
-  const message = input.toLowerCase();
-  const services = db.prepare('SELECT name,price_cents FROM services WHERE active=1 ORDER BY name').all();
-  if (/pre[cç]o|valor|quanto|servi[cç]o|card[aá]pio/.test(message)) return `Esses são os serviços de hoje:\n${services.map((s) => `• ${s.name} — ${money(s.price_cents)}`).join('\n')}\n\nQuer que eu veja horários?`;
-  if (/hor[aá]rio|abre|funciona|aberto/.test(message)) return `A gente atende ${getSetting('opening_note')}. Quer agendar um serviço?`;
-  if (/oi|ol[aá]|bom dia|boa tarde|boa noite/.test(message)) return `Fala! 👋 Você está no ${getSetting('shop_name')}. Posso ajudar com serviços, preços, horários ou agendamento. O que você precisa?`;
-  return `Posso ajudar com serviços e preços, consultar horários, agendar, remarcar ou cancelar. Qual serviço você procura?`;
+function normalizedWords(value = '') {
+  return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function matchingServices(message, services) {
+  const words = new Set(message.split(' ').filter((word) => word.length > 2));
+  return services.map((service) => {
+    const tokens = [...new Set(normalizedWords(service.name).split(' ').filter((word) => word.length > 2))];
+    const hits = tokens.filter((word) => words.has(word)).length;
+    return { service, hits, complete: tokens.length > 0 && hits === tokens.length, tokenCount: tokens.length };
+  }).filter((match) => match.hits > 0)
+    .sort((a, b) => Number(b.complete) - Number(a.complete) || b.hits - a.hits || b.tokenCount - a.tokenCount)
+    .map((match) => match.service);
+}
+function fallbackReply(input, phone = '') {
+  const message = normalizedWords(input);
+  const services = db.prepare('SELECT id,name,description,price_cents,duration_min FROM services WHERE active=1 ORDER BY name').all();
+  const barbers = db.prepare('SELECT name,role,specialty FROM barbers WHERE active=1 ORDER BY name').all();
+  const matches = matchingServices(message, services);
+  const service = matches[0];
+  const outgoingCount = phone
+    ? Number(db.prepare("SELECT COUNT(*) AS count FROM messages WHERE phone=? AND direction='out'").get(phone)?.count || 0)
+    : 0;
+  const variant = (choices) => choices[outgoingCount % choices.length];
+  const serviceLine = (item) => `• ${item.name} — ${money(item.price_cents)} · ${item.duration_min} min${item.description ? ` · ${item.description}` : ''}`;
+  const serviceMenu = () => services.map(serviceLine).join('\n');
+  const greeting = /\b(oi|ola|opa|e ai|fala|bom dia|boa tarde|boa noite)\b/.test(message);
+  const identityQuestion = /\b(com quem (estou )?falando|quem esta falando|quem ta falando|qual (e|o) seu nome|voce e (um|uma )?(bot|robo|assistente))\b/.test(message);
+  const serviceListQuestion = /\b(servicos?|cardapio|catalogo|vendem|oferecem|trabalham com|o que voces fazem|oq voces fazem)\b/.test(message);
+  const priceQuestion = /\b(preco|valor|quanto custa|quanto fica|quanto e|quanto sai)\b/.test(message);
+  const addressQuestion = /\b(endereco|localizacao|onde fica|onde voces ficam|como chegar|mapa)\b/.test(message);
+  const openingQuestion = /\b(aberto|abre|fecha|funciona|horario de funcionamento|dias de atendimento|atende hoje)\b/.test(message);
+  const appointmentIntent = /\b(agendar|marcar|reservar|reserva|vaga|disponibilidade|agenda|horario|horarios)\b/.test(message);
+  const paymentQuestion = /\b(pagamento|pagar|pix|cartao|credito|debito|dinheiro|parcel|mensalidade)\b/.test(message);
+
+  if (identityQuestion) return variant([
+    `Você está falando com o assistente virtual da ${getSetting('shop_name')} 🙂 Posso te ajudar com serviços, preços e agendamentos.`,
+    `Sou o assistente virtual da ${getSetting('shop_name')}. Me conta: você quer saber sobre algum serviço ou marcar um horário?`,
+  ]);
+
+  if (/\b(atendente|pessoa|humano|recepcionista)\b/.test(message)) {
+    if (phone) runAgentTool('transferir_atendimento', { motivo: 'Cliente pediu atendimento humano no modo de demonstração' }, { phone, lastMessage: input });
+    return 'Claro — vou deixar a conversa com a equipe para uma pessoa continuar com você.';
+  }
+
+  if (addressQuestion) return variant([
+    `A gente fica em ${getSetting('address')}. Se quiser, também te passo o telefone da barbearia: ${getSetting('phone')}.`,
+    `Nosso endereço é ${getSetting('address')}. Quer ajuda com mais alguma informação?`,
+  ]);
+
+  if (/\b(equipe|barbeiro|barbeiros|profissional|profissionais|quem atende|especialidade)\b/.test(message)) {
+    const roster = barbers.map((barber) => `• ${barber.name} — ${barber.role}${barber.specialty ? ` · ${barber.specialty}` : ''}`).join('\n');
+    return `Na equipe temos:\n${roster}\n\nVocê tem preferência por alguém?`;
+  }
+
+  if (paymentQuestion) return 'Ainda não tenho as formas de pagamento cadastradas. Prefiro confirmar com a equipe a te passar uma informação errada. Quer que eu chame alguém?';
+
+  if (openingQuestion) return `Nosso horário é ${getSetting('opening_note')}. Se você me disser o serviço e o dia, eu te ajudo a seguir com o agendamento.`;
+
+  if (/\b(cancelamento|cancelar|desmarcar|remarcar|reagendar)\b/.test(message)) {
+    if (/\b(politica|antecedencia|prazo|taxa|regra)\b/.test(message)) return `Nossa política é: ${getSetting('cancellation_policy')}`;
+    return 'Posso te ajudar com isso. Você quer cancelar ou mudar um agendamento? Para conferir com segurança, preciso localizar o horário no seu número.';
+  }
+
+  if (serviceListQuestion || ((priceQuestion || /\b(tem|fazem|faz|oferece|oferecem)\b/.test(message)) && !service)) {
+    return variant([
+      `Temos estas opções:\n${serviceMenu()}\n\nQual delas te interessa?`,
+      `Olha só o que está no nosso catálogo:\n${serviceMenu()}\n\nSe já souber o que quer, eu te passo os detalhes.`,
+    ]);
+  }
+
+  if (service) {
+    const details = `${service.name} custa ${money(service.price_cents)} e leva cerca de ${service.duration_min} minutos.${service.description ? ` ${service.description}` : ''}`;
+    if (appointmentIntent || /\b(quero|queria|vou fazer|fazer|marcar)\b/.test(message)) {
+      return `${details} Quer que eu procure um horário? Qual dia fica melhor pra você?`;
+    }
+    if (priceQuestion) return variant([`O ${service.name} fica ${money(service.price_cents)} e dura cerca de ${service.duration_min} minutos. Quer conferir os horários?`, details]);
+    return variant([`Boa escolha! ${details} Se quiser, posso te ajudar a marcar.`, `${details} Quer ver opções de horário?`]);
+  }
+
+  if (appointmentIntent) return 'Bora ver isso 🙂 Qual serviço você quer fazer e para que dia está pensando?';
+  if (/\b(obrigado|obrigada|valeu|brigado|brigada)\b/.test(message)) return variant(['Imagina! Se precisar, é só me chamar 🙂', 'Por nada! Tô por aqui se pintar outra dúvida.']);
+  if (greeting) return variant([
+    `Boa! 👋 Você está falando com o atendimento virtual da ${getSetting('shop_name')}. O que você está procurando hoje?`,
+    `Oi! Que bom falar com você 🙂 Quer ver nossos serviços, tirar uma dúvida ou marcar um horário?`,
+    `Boa tarde! Como posso te ajudar hoje — serviço, preço ou agendamento?`,
+  ]);
+
+  return variant([
+    'Não encontrei essa informação cadastrada. Posso te ajudar com serviços, preços, endereço ou horários; se preferir, chamo a equipe.',
+    'Essa eu prefiro confirmar antes de responder. Sua dúvida é sobre algum serviço, horário ou agendamento?',
+    `Me dá só mais um detalhe para eu te orientar melhor. Se for algo específico, também posso chamar a equipe da ${getSetting('shop_name')}.`,
+  ]);
 }
 async function generateReply(phone, lastMessage) {
-  if (!aiConfigured()) return fallbackReply(lastMessage);
+  if (!aiConfigured()) return fallbackReply(lastMessage, phone);
   const conversation = db.prepare('SELECT last_response_id FROM conversations WHERE phone=?').get(phone);
   const payload = {
     model: process.env.OPENAI_MODEL || 'gpt-6-astra',
@@ -538,7 +624,7 @@ async function processInbound(phone, message, messageId = '') {
   try { answer = await generateReply(phone, message); }
   catch (error) {
     console.error('Falha na IA:', error.message);
-    answer = fallbackReply(message);
+    answer = fallbackReply(message, phone);
   }
   saveMessage(phone, 'out', answer, 'whatsapp');
   try { await sendWhatsApp(phone, answer); }
@@ -732,7 +818,7 @@ async function api(req, res, url) {
     saveMessage(phone, 'in', value.message.trim(), 'demo');
     let reply;
     try { reply = await generateReply(phone, value.message.trim()); }
-    catch (error) { console.error('Falha na IA:', error.message); reply = fallbackReply(value.message); }
+    catch (error) { console.error('Falha na IA:', error.message); reply = fallbackReply(value.message, phone); }
     saveMessage(phone, 'out', reply, 'demo');
     return json(res, 200, { reply, handoff: Boolean(db.prepare('SELECT handoff FROM conversations WHERE phone=?').get(phone)?.handoff) });
   }
