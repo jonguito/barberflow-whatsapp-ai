@@ -1,0 +1,16 @@
+{
+  "name": "barberflow-studio-os",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Painel e agente de agendamento por WhatsApp para barbearias.",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "twilio": "^6.1.2"
+  }
+}

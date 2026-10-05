@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#15191e">
+  <meta name="description" content="Agende seu próximo corte. Escolha serviço, profissional e horário.">
+  <title>Agende sua cadeira — BarberFlow</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    body{background:#171b20}.booking-wrap{min-height:100vh;padding:38px 16px 60px;background:radial-gradient(circle at 10% 5%,#44332d 0,transparent 28%),radial-gradient(circle at 90% 25%,#2d3737 0,transparent 25%),#171b20}.booking-brand{display:flex;align-items:center;justify-content:center;gap:10px;color:#fff;text-decoration:none;margin:0 auto 28px;width:max-content}.booking-brand strong{font:800 17px Manrope,sans-serif;letter-spacing:-.7px}.booking-brand strong span{color:#f18465}.booking-card{width:min(620px,100%);margin:auto;background:#f9faf8;border-radius:19px;overflow:hidden;box-shadow:0 28px 70px #0005}.booking-hero{background:#252c31;color:#fff;padding:26px 29px 22px;position:relative;overflow:hidden}.booking-hero:after{content:'✂';position:absolute;right:23px;top:10px;color:#ffffff0d;font-size:104px;transform:rotate(-18deg)}.booking-hero .eyebrow{color:#ff987a}.booking-hero h1{font:800 28px Manrope,sans-serif;letter-spacing:-1.2px;margin:0;position:relative;z-index:1}.booking-hero p{font-size:11px;color:#b6bec2;margin:7px 0 0;position:relative;z-index:1}.booking-progress{display:flex;gap:7px;margin-top:20px;position:relative;z-index:1}.booking-progress i{height:3px;width:36px;border-radius:5px;background:#536068}.booking-progress i.active{background:#f08060}.booking-form{padding:24px 29px 27px;display:grid;gap:16px}.booking-form .field-label{font-size:10px}.booking-form .field-input,.booking-form .field-select{background:#fff}.booking-two{display:grid;grid-template-columns:1fr 1fr;gap:13px}.booking-services{display:grid;gap:8px}.service-choice input{position:absolute;opacity:0}.service-choice-card{display:flex;align-items:center;gap:12px;border:1px solid #e5e8e6;border-radius:11px;background:#fff;padding:12px;cursor:pointer;transition:.15s}.service-choice input:checked+.service-choice-card{border-color:#e78062;background:#fff6f2;box-shadow:0 0 0 2px #ee765521}.service-symbol{width:34px;height:34px;border-radius:10px;background:#f5e6e0;color:#d26043;display:grid;place-items:center;font-size:14px}.service-detail{min-width:0;flex:1}.service-detail strong{font-size:11px;display:block}.service-detail small{font-size:9px;color:#929a9f;display:block;margin-top:3px}.service-price{font:800 11px Manrope;color:#3b4348}.booking-slots{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;min-height:32px}.booking-slots .slot-choice span{background:#fff}.booking-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:4px}.booking-secure{color:#9aa1a5;font-size:8px}.booking-success{padding:35px 25px 32px;text-align:center}.success-icon{margin:0 auto 15px;width:55px;height:55px;border-radius:50%;background:#e8f6ed;color:#409169;display:grid;place-items:center;font-size:25px}.booking-success h2{font:800 23px Manrope;letter-spacing:-.7px;margin:0}.booking-success p{font-size:11px;color:#788188;line-height:1.6}.booking-success .button{margin-top:9px}.booking-info{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 29px;border-top:1px solid #eceeec;color:#8a9297;font-size:9px}.booking-info a{color:#ce6448;text-decoration:none;font-weight:700}.booking-loading{font-size:9px;color:#90989d;padding:5px 0}.booking-error{color:#bb5141;font-size:9px;min-height:12px;margin:0}.@media(max-width:540px){.booking-wrap{padding:19px 10px 40px}.booking-brand{margin-bottom:17px}.booking-hero{padding:22px 20px 18px}.booking-form{padding:19px 18px 21px}.booking-info{padding:13px 18px}.booking-two{grid-template-columns:1fr}.booking-slots{grid-template-columns:repeat(3,1fr)}.booking-hero h1{font-size:24px}}
+  </style>
+</head>
+<body>
+  <main class="booking-wrap">
+    <a class="booking-brand" href="/"><span class="brand-mark">B<span>F</span></span><strong>barber<span>flow</span></strong></a>
+    <section class="booking-card">
+      <header class="booking-hero"><p class="eyebrow">SUA PRÓXIMA VISITA</p><h1 id="shop-name">Reserve sua cadeira.</h1><p id="shop-tagline">Escolha seu ritual. A gente cuida do resto.</p><div class="booking-progress"><i class="active"></i><i class="active"></i><i class="active"></i></div></header>
+      <form id="public-booking-form" class="booking-form">
+        <div><label class="field-label">1 · Escolha seu serviço</label><div class="booking-services" id="service-list"><div class="booking-loading">Carregando serviços…</div></div></div>
+        <div class="booking-two"><label class="field-label">2 · Profissional<select name="barberId" id="barber-select" class="field-select"><option value="">Qualquer profissional disponível</option></select></label><label class="field-label">3 · Data<input name="date" id="booking-date" type="date" class="field-input" required></label></div>
+        <div><label class="field-label">4 · Escolha um horário</label><div class="booking-slots" id="slot-list"><div class="booking-loading">Escolha o serviço e a data.</div></div></div>
+        <div class="booking-two"><label class="field-label">Seu nome<input name="name" class="field-input" placeholder="Como podemos te chamar?" autocomplete="name" required></label><label class="field-label">WhatsApp<input name="phone" class="field-input" type="tel" placeholder="+55 27 99999-0000" autocomplete="tel" required></label></div>
+        <label class="form-check"><input type="checkbox" name="consent" required><span>Aceito receber pelo WhatsApp a confirmação deste agendamento.</span></label>
+        <label class="form-check"><input type="checkbox" name="reminderOptIn"><span>Quero receber um lembrete 24h antes. Posso cancelar essa preferência quando quiser.</span></label>
+        <p class="booking-error" id="booking-error"></p>
+        <div class="booking-footer"><span class="booking-secure">Seus dados serão usados para organizar esta reserva.</span><button class="button button-primary">Confirmar horário <span>→</span></button></div>
+      </form>
+      <footer class="booking-info"><span id="shop-address">BarberFlow Studio</span><a id="shop-instagram" href="#" target="_blank" rel="noreferrer">Instagram ↗</a></footer>
+    </section>
+  </main>
+  <script type="module" src="/booking.js?v=2"></script>
+</body>
+</html>
